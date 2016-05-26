@@ -63,7 +63,7 @@ Puppet::Type.type(:package).provide :aix, :parent => Puppet::Provider::Package d
 
     packages.each do |name, package|
       if info = updates[package[:name]]
-        package.provider.latest_info = info[0]
+        package.provider.latest_info = info
       end
     end
   end
