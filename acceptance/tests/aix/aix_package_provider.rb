@@ -55,6 +55,14 @@ package { '#{package}':
 }
 MANIFEST
 
+latest_manifest = <<-MANIFEST
+package { '#{package}':
+  ensure   => latest,
+  provider => aix,
+  source   => '#{dir}',
+}
+MANIFEST
+
 step "install the package"
 
 apply_manifest_on hosts, version1_manifest
@@ -76,6 +84,46 @@ step "test that downgrading fails by trying to install an older version of the p
 on hosts, puppet_apply("--verbose", "--detailed-exitcodes"), :stdin => version1_manifest, :acceptable_exit_codes => [4,6] do
   assert_match(/aix package provider is unable to downgrade packages/, stderr, "Didn't get an error about downgrading packages")
 end
+
+step "uninstall the package"
+
+apply_manifest_on hosts, absent_manifest
+
+step "verify the package is gone"
+
+on hosts, "lslpp -qLc #{package}", :acceptable_exit_codes => [1]
+
+step "install the latest version of the package"
+
+apply_manifest_on hosts, latest_manifest
+
+step "verify package is installed and at the newer version"
+
+assert_package_version package, version2
+
+step "uninstall the package"
+
+apply_manifest_on hosts, absent_manifest
+
+step "verify the package is gone"
+
+on hosts, "lslpp -qLc #{package}", :acceptable_exit_codes => [1]
+
+step "install the package again"
+
+apply_manifest_on hosts, version1_manifest
+
+step "verify package is installed and at the correct version"
+
+assert_package_version package, version1
+
+step "upgrade to latest version of the package"
+
+apply_manifest_on hosts, latest_manifest
+
+step "verify package is installed and at the newer version"
+
+assert_package_version package, version2
 
 step "uninstall the package"
 
